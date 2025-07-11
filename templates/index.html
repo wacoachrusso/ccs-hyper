@@ -2,25 +2,59 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#121824">
+    <meta name="description" content="CCS Hyper - Smart schedule syncing for crew members">
     <title>CCS Hyper</title>
+    
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="../static/img/favicon.ico">
+    <link rel="apple-touch-icon" href="../static/img/apple-touch-icon.png">
+    
+    <!-- PWA manifest -->
+    <link rel="manifest" href="../static/manifest.json">
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
     <style>
         body { 
             font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             text-align: center; 
             padding-top: 50px; 
+            padding-left: 10px;
+            padding-right: 10px;
             background-color: #121824;
             color: #e6e6e6;
+            -webkit-text-size-adjust: 100%;
         }
         .container { 
             max-width: 400px; 
+            width: 100%;
             margin: auto; 
             background: #1e2635;
-            padding: 30px 40px 40px 40px;
+            padding: 30px 20px 40px 20px;
             border-radius: 8px;
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
             border: 1px solid #2a3548;
+            box-sizing: border-box;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 480px) {
+            body {
+                padding-top: 20px;
+            }
+            .container {
+                width: 95%;
+                padding: 20px 15px 30px 15px;
+            }
+            .btn, .google-btn {
+                font-size: 14px;
+                padding: 12px 16px;
+            }
+            .form-input {
+                font-size: 16px; /* Prevent zoom on iOS */
+            }
         }
         .logo {
             max-width: 180px;
@@ -39,6 +73,72 @@
         .status-highlight {
             color: #4ecbff;
             font-weight: 700;
+        }
+        
+        .disclaimer-banner {
+            background-color: rgba(255, 193, 7, 0.15);
+            border-left: 4px solid #ffc107;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 15px 0;
+            display: flex;
+            align-items: flex-start;
+            text-align: left;
+            font-size: 14px;
+        }
+        
+        .disclaimer-icon {
+            margin-right: 10px;
+            font-size: 16px;
+        }
+        
+        .disclaimer-text {
+            flex: 1;
+            line-height: 1.4;
+        }
+        
+        .success-notification {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: rgba(25, 135, 84, 0.15);
+            border-left: 4px solid #198754;
+            border-radius: 4px;
+            font-size: 16px;
+            animation: fadeInUp 0.5s;
+            text-align: center;
+        }
+        
+        .success-icon {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            background-color: #198754;
+            border-radius: 50%;
+            position: relative;
+            margin-right: 10px;
+        }
+        
+        .success-icon:after {
+            content: '';
+            position: absolute;
+            width: 10px;
+            height: 5px;
+            border-left: 2px solid white;
+            border-bottom: 2px solid white;
+            transform: rotate(-45deg);
+            left: 5px;
+            top: 6px;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
         h1 { 
             color: #0066cc; /* Professional blue */
@@ -141,14 +241,174 @@
             0% { transform: rotate(0deg); } 
             100% { transform: rotate(360deg); } 
         }
+        
+        /* Trip selection styling */
+        .sync-options {
+            margin: 20px 0;
+            text-align: left;
+        }
+        
+        .trip-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 10px 0 20px;
+            border: 1px solid #2a3548;
+            border-radius: 4px;
+            padding: 10px;
+            background: #172030;
+        }
+        
+        .trip-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 8px;
+            border-radius: 4px;
+            background: #1e2635;
+            border-left: 3px solid #2176ff;
+        }
+        
+        .trip-item:hover {
+            background: #23303f;
+        }
+        
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            position: relative;
+            padding-left: 35px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .checkbox-container input {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+            height: 0;
+            width: 0;
+        }
+        
+        .checkmark {
+            position: absolute;
+            left: 0;
+            height: 20px;
+            width: 20px;
+            background-color: #172030;
+            border: 1px solid #2a3548;
+            border-radius: 3px;
+        }
+        
+        .checkbox-container:hover input ~ .checkmark {
+            background-color: #23303f;
+        }
+        
+        .checkbox-container input:checked ~ .checkmark {
+            background-color: #2176ff;
+        }
+        
+        .checkmark:after {
+            content: "";
+            position: absolute;
+            display: none;
+        }
+        
+        .checkbox-container input:checked ~ .checkmark:after {
+            display: block;
+        }
+        
+        .checkbox-container .checkmark:after {
+            left: 6px;
+            top: 2px;
+            width: 5px;
+            height: 10px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+        
+        .selection-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .small-btn {
+            padding: 8px 12px;
+            background-color: #172030;
+            color: #a8b3cf;
+            border: 1px solid #2a3548;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .small-btn:hover {
+            background-color: #23303f;
+            color: white;
+        }
+        
+        .trip-info {
+            flex-grow: 1;
+            margin-left: 10px;
+            text-align: left;
+        }
+        
+        .trip-date {
+            font-weight: 600;
+            color: #a8b3cf;
+        }
+        
+        .trip-title {
+            color: #e6e6e6;
+            margin-top: 4px;
+        }
         #results { display: none; margin-top: 20px; }
     </style>
 </head>
 <body>
+    <!-- Android Install Prompt -->
+    <div id="install-prompt" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background: #1e2635; border-top: 2px solid #2176ff; padding: 15px; z-index: 100; text-align: left;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <strong>Add CCS Hyper to Home Screen</strong>
+                <p style="margin: 5px 0; font-size: 14px;">Install this app on your device for quick access.</p>
+            </div>
+            <div>
+                <button id="install-button" class="btn" style="margin: 0; width: auto; padding: 8px 15px;">Install</button>
+                <button id="close-prompt" style="background: none; border: none; color: #a8b3cf; margin-left: 10px; cursor: pointer;">✕</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- iOS Instructions Modal -->
+    <div id="ios-instructions" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 200;">
+        <div style="max-width: 350px; background: #1e2635; border-radius: 8px; padding: 20px; margin: 80px auto; border: 1px solid #2a3548; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
+            <h3>Add to Home Screen</h3>
+            <p style="text-align: left; margin: 15px 0;">To install CCS Hyper on your iOS device:</p>
+            <ol style="text-align: left; padding-left: 20px;">
+                <li>Tap the <strong>share icon</strong> <span style="font-size: 20px;">&#x25B2;</span> at the bottom of your screen</li>
+                <li>Scroll and select <strong>Add to Home Screen</strong></li>
+                <li>Tap <strong>Add</strong> in the top right corner</li>
+            </ol>
+            <p style="text-align: left; margin: 15px 0;">You'll now have the CCS Hyper icon on your home screen!</p>
+            <button id="close-ios-instructions" class="btn">Got it!</button>
+        </div>
+    </div>
+    
     <div class="container">
         <div id="form-container">
             <img src="../static/img/ccs_hyper_logo.png" alt="CCS HYPER" class="logo">
-            <h1>CCS HYPER</h1>
+            <h1>CCS Hyper</h1>
+            
+            <!-- Disclaimer Banner -->
+            <div class="disclaimer-banner">
+                <div class="disclaimer-icon">⚠️</div>
+                <div class="disclaimer-text">
+                    <strong>Important:</strong> This app is unofficial. Always verify trip information with the official CCS app or company resources.
+                </div>
+            </div>
             <p>Smart schedule syncing for crew members</p>
             <form id="syncForm">
                 <input type="text" id="username" name="username" placeholder="United ID" class="form-input" required>
@@ -157,116 +417,412 @@
             </form>
         </div>
 
-        <div id="loading" class="spinner-container">
+        <div id="spinner-container" class="spinner-container">
             <div class="spinner"></div>
             <p>Syncing your schedule... this may take a moment.</p>
         </div>
 
         <div id="results">
             <h3>Sync Complete!</h3>
+            
+            <div class="sync-options">
+                <label class="checkbox-container">
+                    <input type="checkbox" id="preserve-past-trips">
+                    <span class="checkmark"></span>
+                    Preserve past trips (only update future trips)
+                </label>
+            </div>
+            
+            <div id="trip-selection-container">
+                <h4>Select trips to sync:</h4>
+                <div class="selection-controls">
+                    <button id="select-all" class="small-btn">Select All</button>
+                    <button id="deselect-all" class="small-btn">Deselect All</button>
+                </div>
+                <div id="trip-list" class="trip-list">
+                    <!-- Trip checkboxes will be inserted here dynamically -->
+                </div>
+            </div>
+            
             <p>Choose your calendar:</p>
             <button id="google-sync-btn" class="google-btn">Sync to Google Calendar</button>
-            <p id="google-status"></p>
+            <div id="google-status"></div>
+            <div id="success-notification" class="success-notification" style="display: none;">
+                <span class="success-icon"></span>
+                <span id="success-message">Successfully synced your schedule!</span>
+            </div>
             <a id="icsLink" href="#" download="schedule.ics" class="btn">Download for Apple/Outlook (.ics)</a>
+            
+            <!-- Second disclaimer at the bottom of results -->
+            <div class="disclaimer-banner" style="margin-top: 20px;">
+                <div class="disclaimer-icon">⚠️</div>
+                <div class="disclaimer-text">
+                    <strong>Remember:</strong> Calendar events are for reference only. Always check official crew scheduling systems for the most up-to-date information.
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
-        const syncForm = document.getElementById('syncForm');
-        const googleSyncBtn = document.getElementById('google-sync-btn');
-        const googleStatus = document.getElementById('google-status');
-        const loading = document.getElementById('loading');
-        const results = document.getElementById('results');
-        const formContainer = document.getElementById('form-container');
-
-        let scheduleEvents = []; // Variable to hold the parsed events
-
-        // 1. Handle the initial schedule sync
-        syncForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            formContainer.style.display = 'none';
-            loading.style.display = 'block';
-            results.style.display = 'none';
-
-            const formData = new FormData(this);
-
-            fetch('/sync', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(err => { throw new Error(err.error || 'Unknown server error'); });
-                }
-                return response.json();
-            })
-            .then(data => {
-                loading.style.display = 'none';
-                if (data.error) {
-                    throw new Error(data.error);
-                }
-                scheduleEvents = data.events; // Store events from the backend
-                results.style.display = 'block';
-                googleStatus.textContent = `Found ${scheduleEvents.length} events. Ready to sync to Google Calendar.`;
-            })
-            .catch(error => {
-                loading.style.display = 'none';
-                formContainer.style.display = 'block';
-                alert('Failed to sync schedule: ' + error.message);
-            });
-        });
-
-        // 2. Handle the Google Calendar push
-        googleSyncBtn.addEventListener('click', function() {
-            if (scheduleEvents.length === 0) {
-                alert('Please sync your schedule first.');
-                return;
+        document.addEventListener('DOMContentLoaded', function() {
+            // Hide the spinner and reset UI
+            function resetUI() {
+                document.getElementById('spinner-container').style.display = 'none';
+                document.getElementById('form-container').style.display = 'block';
+                document.getElementById('syncForm').reset();
             }
-            googleStatus.textContent = 'Authorizing with Google...';
             
-            fetch('/authorize')
+            // Show spinner
+            function showSpinner() {
+                document.getElementById('spinner-container').style.display = 'block';
+                document.getElementById('form-container').style.display = 'none';
+            }
+
+            // Handle form submission
+            document.getElementById('syncForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                showSpinner();
+                
+                const formData = new FormData(this);
+                
+                fetch('/sync', {
+                    method: 'POST',
+                    body: formData
+                })
                 .then(response => response.json())
                 .then(data => {
                     if (data.error) {
-                        throw new Error(data.error);
+                        alert('Error: ' + data.error);
+                        resetUI();
+                        return;
                     }
-                    const authPopup = window.open(data.auth_url, 'google-auth', 'height=600,width=500');
-
-                    // Listen for the popup to close, then push the stored events
-                    const checkPopup = setInterval(() => {
-                        if (!authPopup || authPopup.closed) {
-                            clearInterval(checkPopup);
-                            pushEventsToGoogle();
+                    
+                    // Success - display the calendar download link
+                    document.getElementById('spinner-container').style.display = 'none';
+                    document.getElementById('results').style.display = 'block';
+                    
+                    // Store the events data for later use
+                    window.eventsData = data.events;
+                    
+                    // Populate trip list for manual selection
+                    populateTripList(data.events);
+                    
+                    // Create ICS file for non-Google calendars
+                    const blob = new Blob([createICSFile(data.events)], { type: 'text/calendar' });
+                    const url = URL.createObjectURL(blob);
+                    document.getElementById('icsLink').href = url;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred. Please try again.');
+                    resetUI();
+                });
+            });
+            
+            // Populate trip list for manual selection
+            function populateTripList(events) {
+                const tripListEl = document.getElementById('trip-list');
+                tripListEl.innerHTML = '';
+                
+                if (!events || events.length === 0) {
+                    tripListEl.innerHTML = '<p>No trips found in schedule.</p>';
+                    return;
+                }
+                
+                events.forEach((event, index) => {
+                    // Create trip item
+                    const tripItem = document.createElement('div');
+                    tripItem.className = 'trip-item';
+                    
+                    // Format date string
+                    const startDate = new Date(event.start.dateTime || event.start.date);
+                    const endDate = new Date(event.end.dateTime || event.end.date);
+                    const dateFormatOptions = { weekday: 'short', month: 'short', day: 'numeric' };
+                    const dateStr = `${startDate.toLocaleDateString(undefined, dateFormatOptions)} - ${endDate.toLocaleDateString(undefined, dateFormatOptions)}`;
+                    
+                    // Create checkbox
+                    const label = document.createElement('label');
+                    label.className = 'checkbox-container';
+                    
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.className = 'trip-checkbox';
+                    checkbox.dataset.index = index;
+                    checkbox.checked = true; // Default all selected
+                    
+                    const checkmark = document.createElement('span');
+                    checkmark.className = 'checkmark';
+                    
+                    // Create info container
+                    const infoDiv = document.createElement('div');
+                    infoDiv.className = 'trip-info';
+                    
+                    const dateDiv = document.createElement('div');
+                    dateDiv.className = 'trip-date';
+                    dateDiv.textContent = dateStr;
+                    
+                    const titleDiv = document.createElement('div');
+                    titleDiv.className = 'trip-title';
+                    titleDiv.textContent = event.summary || 'Untitled Trip';
+                    
+                    // Assemble the elements
+                    infoDiv.appendChild(dateDiv);
+                    infoDiv.appendChild(titleDiv);
+                    
+                    label.appendChild(checkbox);
+                    label.appendChild(checkmark);
+                    label.appendChild(infoDiv);
+                    
+                    tripItem.appendChild(label);
+                    tripListEl.appendChild(tripItem);
+                });
+            }
+            
+            // Handle Select All button
+            document.getElementById('select-all').addEventListener('click', function() {
+                const checkboxes = document.querySelectorAll('.trip-checkbox');
+                checkboxes.forEach(checkbox => {
+                    checkbox.checked = true;
+                });
+            });
+            
+            // Handle Deselect All button
+            document.getElementById('deselect-all').addEventListener('click', function() {
+                const checkboxes = document.querySelectorAll('.trip-checkbox');
+                checkboxes.forEach(checkbox => {
+                    checkbox.checked = false;
+                });
+            });
+            
+            // Handle Google Calendar sync with options
+            document.getElementById('google-sync-btn').addEventListener('click', function() {
+                if (!window.eventsData) {
+                    alert('No events data available.');
+                    return;
+                }
+                
+                // Get the preserve past trips option
+                const preservePast = document.getElementById('preserve-past-trips').checked;
+                
+                // Get selected trips
+                const selectedIndices = [];
+                document.querySelectorAll('.trip-checkbox:checked').forEach(checkbox => {
+                    selectedIndices.push(parseInt(checkbox.dataset.index, 10));
+                });
+                
+                if (selectedIndices.length === 0) {
+                    alert('Please select at least one trip to sync.');
+                    return;
+                }
+                
+                document.getElementById('google-status').textContent = 'Authorizing with Google...';
+                
+                // Start OAuth flow
+                fetch('/authorize')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        document.getElementById('google-status').textContent = 'Error: ' + data.error;
+                        return;
+                    }
+                    
+                    // Open popup for auth
+                    const popup = window.open(data.auth_url, 'googleAuth', 'width=600,height=700');
+                    
+                    // Poll to check if popup closed
+                    const checkClosed = setInterval(function() {
+                        if (popup.closed) {
+                            clearInterval(checkClosed);
+                            document.getElementById('google-status').textContent = 'Syncing events to Google Calendar...';
+                            
+                            // Push events to Google Calendar with options
+                            fetch('/push', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ 
+                                    events: window.eventsData, 
+                                    preserve_past: preservePast,
+                                    selected_indices: selectedIndices
+                                })
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.error) {
+                                    document.getElementById('google-status').textContent = 'Error: ' + data.error;
+                                } else {
+                                    // Clear previous status
+                                    document.getElementById('google-status').innerHTML = '';
+                                    
+                                    // Show success notification
+                                    const successNotification = document.getElementById('success-notification');
+                                    const successMessage = document.getElementById('success-message');
+                                    
+                                    successMessage.innerHTML = `
+                                        <strong>Sync Complete!</strong><br>
+                                        <span class="status-highlight">${data.inserted}</span> events added to your Google Calendar.
+                                        ${data.deleted > 0 ? `<br><span class="status-highlight">${data.deleted}</span> old events were removed.` : ''}
+                                    `;
+                                    
+                                    successNotification.style.display = 'block';
+                                    
+                                    // Scroll to make notification visible
+                                    successNotification.scrollIntoView({behavior: 'smooth'});
+                                    
+                                    // Add some celebration effect (confetti-like animation could be added here)
+                                    setTimeout(() => {
+                                        // Optional: hide the notification after some time
+                                        // successNotification.style.display = 'none';
+                                    }, 10000); // 10 seconds
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                document.getElementById('google-status').textContent = 'Error during sync.';
+                            });
                         }
                     }, 500);
                 })
-                .catch(err => {
-                    googleStatus.textContent = 'Failed to start Google authorization: ' + err.message;
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('google-status').textContent = 'Error during authorization.';
                 });
-        });
+            });
 
-        function pushEventsToGoogle() {
-            googleStatus.textContent = 'Pushing events to your calendar...';
-            fetch('/push', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ events: scheduleEvents })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(err => { throw new Error(err.error || 'Unknown server error'); });
-                }
-                return response.json();
-            })
-            .then(data => {
-                googleStatus.textContent = `Successfully inserted ${data.inserted} events into your calendar.`;
-            })
-            .catch(error => {
-                googleStatus.textContent = 'Failed to push events: ' + error.message;
+            // Function to create ICS file content
+            function createICSFile(events) {
+                let icsContent = 
+                    "BEGIN:VCALENDAR\n" +
+                    "VERSION:2.0\n" +
+                    "PRODID:-//CCSHyper//NONSGML v1.0//EN\n";
+                
+                // Get selected trips for ICS file too
+                const selectedIndices = [];
+                document.querySelectorAll('.trip-checkbox:checked').forEach(checkbox => {
+                    selectedIndices.push(parseInt(checkbox.dataset.index, 10));
+                });
+                
+                // Only include selected events if we have selections
+                const eventsToInclude = selectedIndices.length > 0 ? 
+                    selectedIndices.map(i => events[i]) : 
+                    events;
+                
+                eventsToInclude.forEach(event => {
+                    const start = new Date(event.start.dateTime || event.start.date);
+                    const end = new Date(event.end.dateTime || event.end.date);
+                    
+                    // Format dates for ICS (UTC format with Z)
+                    const startFormatted = start.toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
+                    const endFormatted = end.toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
+                    
+                    icsContent += 
+                        "BEGIN:VEVENT\n" +
+                        `SUMMARY:${event.summary}\n` +
+                        `DTSTART:${startFormatted}\n` +
+                        `DTEND:${endFormatted}\n` +
+                        `DESCRIPTION:${(event.description || '').replace(/\n/g, '\\n')}\n` +
+                        "END:VEVENT\n";
+                });
+                
+                icsContent += "END:VCALENDAR";
+                return icsContent;
+            }
+        });
+    </script>
+    <!-- PWA and Install Script -->
+    <script>
+        // Register service worker for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('../static/service-worker.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registered: ', registration);
+                    })
+                    .catch(error => {
+                        console.log('ServiceWorker registration failed: ', error);
+                    });
             });
         }
+        
+        // Install prompt variables
+        let deferredPrompt;
+        const installPrompt = document.getElementById('install-prompt');
+        const installButton = document.getElementById('install-button');
+        const closePromptButton = document.getElementById('close-prompt');
+        const showIOSInstructionsButton = document.getElementById('ios-instructions-button');
+        const iosInstructionsModal = document.getElementById('ios-instructions');
+        const closeIOSInstructionsButton = document.getElementById('close-ios-instructions');
+        
+        // Android install prompt
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Prevent Chrome 67 and earlier from automatically showing the prompt
+            e.preventDefault();
+            // Stash the event so it can be triggered later
+            deferredPrompt = e;
+            // Show the install prompt
+            installPrompt.style.display = 'block';
+        });
+        
+        // Install button click handler
+        if (installButton) {
+            installButton.addEventListener('click', () => {
+                // Hide the app provided install prompt
+                installPrompt.style.display = 'none';
+                // Show the install prompt
+                deferredPrompt.prompt();
+                // Wait for the user to respond to the prompt
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('User accepted the install prompt');
+                    } else {
+                        console.log('User dismissed the install prompt');
+                    }
+                    deferredPrompt = null;
+                });
+            });
+        }
+        
+        // Close prompt button
+        if (closePromptButton) {
+            closePromptButton.addEventListener('click', () => {
+                installPrompt.style.display = 'none';
+            });
+        }
+        
+        // iOS detection
+        function isIOS() {
+            return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        }
+        
+        // Show iOS instructions if on iOS
+        if (isIOS() && navigator.standalone !== true) {
+            // Add an icon at the top of the app
+            const header = document.querySelector('h1');
+            if (header) {
+                const iosButton = document.createElement('button');
+                iosButton.id = 'ios-instructions-button';
+                iosButton.innerHTML = '📱 Add to Home Screen';
+                iosButton.style = 'background: none; border: 1px solid #2176ff; color: #2176ff; padding: 5px 10px; border-radius: 4px; font-size: 12px; margin-top: 5px; cursor: pointer;';
+                header.parentNode.insertBefore(iosButton, header.nextSibling);
+                
+                iosButton.addEventListener('click', () => {
+                    document.getElementById('ios-instructions').style.display = 'block';
+                });
+            }
+        }
+        
+        // Close iOS instructions
+        if (closeIOSInstructionsButton) {
+            closeIOSInstructionsButton.addEventListener('click', () => {
+                iosInstructionsModal.style.display = 'none';
+            });
+        }
+        
+        // Close iOS modal if clicking outside
+        window.addEventListener('click', (event) => {
+            if (event.target === iosInstructionsModal) {
+                iosInstructionsModal.style.display = 'none';
+            }
+        });
     </script>
 </body>
 </html>
