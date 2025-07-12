@@ -1,63 +1,102 @@
 """Helper functions for Google Calendar OAuth flow and service creation."""
-import os
-import datetime as dt
-from pathlib import Path
-from typing import Optional
 
+import os
+import json
+import logging
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
-from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 
-# Full access to manage events (insert / update / delete)
-SCOPES = ["https://www.googleapis.com/auth/calendar"]
-# Accept either filename so users don't have to rename files
-DEFAULT_CLIENT_SECRETS_FILE = "client_secret.json"
-ALTERNATE_CLIENT_SECRETS_FILE = "credentials.json"
-if os.path.exists(DEFAULT_CLIENT_SECRETS_FILE):
-    CLIENT_SECRETS_FILE = DEFAULT_CLIENT_SECRETS_FILE
-elif os.path.exists(ALTERNATE_CLIENT_SECRETS_FILE):
-    CLIENT_SECRETS_FILE = ALTERNATE_CLIENT_SECRETS_FILE
-else:
-    # Fall back to default name; an explicit error will be raised later if file truly missing
-    CLIENT_SECRETS_FILE = DEFAULT_CLIENT_SECRETS_FILE
-TOKEN_FILE = "token.json"  # For single-user desktop use. Replace with per-user storage in production.
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
+# Constants
+CLIENT_SECRETS_FILE = 'credentials.json' # Standard name
+SCOPES = ['https://www.googleapis.com/auth/calendar', 'https://www.googleapis.com/auth/userinfo.email']
+API_SERVICE_NAME = 'calendar'
+API_VERSION = 'v3'
+REDIRECT_URI = 'http://localhost:5001/api/google-callback' # Should match your setup
 
-def get_flow() -> Flow:
-    """Return an OAuth 2.0 Flow object configured for installed-app flow."""
-    return Flow.from_client_secrets_file(
+def get_google_auth_url():
+    """Get the Google authentication URL for the user to visit."""
+    try:
+        flow = Flow.from_client_secrets_file(
+            CLIENT_SECRETS_FILE,
+            scopes=SCOPES,
+            redirect_uri=REDIRECT_URI
+        )
+        auth_url, _ = flow.authorization_url(prompt='consent')
+        return auth_url
+    except FileNotFoundError:
+        logger.error(f"'{CLIENT_SECRETS_FILE}' not found. Please add your Google API credentials.")
+        raise
+    except Exception as e:
+        logger.error(f"Error creating auth URL: {e}")
+        raise
+
+def get_credentials_from_code(code):
+    """Exchange an authorization code for credentials."""
+    flow = Flow.from_client_secrets_file(
         CLIENT_SECRETS_FILE,
         scopes=SCOPES,
-        redirect_uri="http://127.0.0.1:5001/oauth2callback",  # matches Flask route
+        redirect_uri=REDIRECT_URI
     )
+    flow.fetch_token(code=code)
+    return flow.credentials
 
+def create_google_calendar_service(credentials):
+    """Create a Google Calendar service object from credentials."""
+    # If credentials are a dict, convert them back to a Credentials object
+    if isinstance(credentials, dict):
+        credentials = Credentials(**credentials)
+    
+    service = build(API_SERVICE_NAME, API_VERSION, credentials=credentials)
+    return service
 
-def save_credentials(creds: Credentials) -> None:
-    """Save credentials to TOKEN_FILE (in JSON)."""
-    with open(TOKEN_FILE, "w", encoding="utf-8") as token:
-        token.write(creds.to_json())
+def get_user_info(service):
+    """Get user's email address from the service object."""
+    user_info_service = build('oauth2', 'v2', credentials=service._credentials)
+    user_info = user_info_service.userinfo().get().execute()
+    return user_info
 
+def add_events_to_calendar(service, pairings):
+    """Adds a list of pairing events to the user's 'CCS Hyper' calendar."""
+    # Find or create the 'CCS Hyper' calendar
+    calendar_list = service.calendarList().list().execute()
+    ccs_calendar_id = None
+    for calendar_entry in calendar_list.get('items', []):
+        if calendar_entry['summary'] == 'CCS Hyper':
+            ccs_calendar_id = calendar_entry['id']
+            break
+    
+    if not ccs_calendar_id:
+        new_calendar = {'summary': 'CCS Hyper', 'timeZone': 'America/New_York'}
+        created_calendar = service.calendars().insert(body=new_calendar).execute()
+        ccs_calendar_id = created_calendar['id']
+        logger.info("Created 'CCS Hyper' calendar")
 
-def load_credentials() -> Optional[Credentials]:
-    """Load credentials from TOKEN_FILE if they exist and are valid.
+    # Clear old events (optional, implement based on user preference)
+    # ...
 
-    Refreshes the access token automatically if needed.
-    Returns None if no valid credentials are available.
-    """
-    if not os.path.exists(TOKEN_FILE):
-        return None
-
-    creds = Credentials.from_authorized_user_file(TOKEN_FILE, SCOPES)
-    if creds and creds.expired and creds.refresh_token:
-        creds.refresh(Request())
-        save_credentials(creds)
-    return creds
-
-
-def build_calendar_service() -> Optional[object]:
-    """Return a shiny Calendar v3 service instance or None if not authorised."""
-    creds = load_credentials()
-    if not creds:
-        return None
-    return build("calendar", "v3", credentials=creds, cache_discovery=False)
+    # Add new events
+    count = 0
+    for pairing in pairings:
+        event = {
+            'summary': f"Trip: {pairing['pairing_code']}",
+            'description': pairing.get('description', ''),
+            'start': {
+                'date': pairing['start_date'],
+                'timeZone': 'America/New_York',
+            },
+            'end': {
+                'date': pairing['end_date'],
+                'timeZone': 'America/New_York',
+            },
+            'reminders': {'useDefault': False},
+        }
+        service.events().insert(calendarId=ccs_calendar_id, body=event).execute()
+        count += 1
+    
+    logger.info(f"Successfully added {count} trips to the calendar")
+    return count
