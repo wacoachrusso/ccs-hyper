@@ -3,21 +3,40 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# Environments
+# Environment variables
 .env
 .venv
-venv/
-env/
+.env.local
 
-# IDEs
+# IDE / Editor specific
 .vscode/
 .idea/
+*.swp
+*.swo
 
-# Misc
-*.db
+# SQLite
 *.sqlite3
+*.db
+
+# Dependencies
+/instance
+/venv/
+/env/
+
+# Netlify
+.netlify
 
 # Google OAuth
-client_secret.json
 credentials.json
 token.json
+
+# Build artifacts
+/dist
+/build
+
+# Log files
+*.log
+
+# OS-specific
+.DS_Store
+Thumbs.db

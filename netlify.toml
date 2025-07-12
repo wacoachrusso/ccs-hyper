@@ -1,0 +1,24 @@
+[build]
+  command = "python build.py"
+  publish = "dist"
+  functions = "netlify/functions"
+
+[dev]
+  command = "flask run --port 8888"
+  targetPort = 8888
+  publish = "static"
+  framework = "#static"
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[template.environment]
+  SUPABASE_URL = "Your Supabase Project URL"
+  SUPABASE_ANON_KEY = "Your Supabase Anon Key"
