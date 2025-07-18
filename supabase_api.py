@@ -7,7 +7,10 @@ from flask import Blueprint, request, jsonify
 import logging
 from supabase_client import SupabaseClient
 from enhanced_parser import EnhancedParser
-from enhanced_scraper import EnhancedScraper
+# The enhanced_scraper module exposes the CcsScraper class which provides
+# all scraping capabilities. The previous import used a non-existent
+# `EnhancedScraper` name which would raise an ImportError at runtime.
+from enhanced_scraper import CcsScraper
 from google_client import get_google_auth_url, get_credentials_from_code, create_google_calendar_service, add_events_to_calendar
 
 # Configure logging
