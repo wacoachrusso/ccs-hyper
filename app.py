@@ -15,7 +15,7 @@ app.register_blueprint(supabase_api_blueprint, url_prefix='/api')
 def index():
     """Serve the main application page."""
     # This now serves the redesigned frontend
-    return render_template('index_redesign.html')
+    return render_template('index.html')
 
 @app.route('/static/<path:path>')
 def send_static(path):
