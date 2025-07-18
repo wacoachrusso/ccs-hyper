@@ -71,9 +71,11 @@ def inject_env_variables():
     try:
         with open(config_js_path, 'r') as f:
             content = f.read()
-        
-        content = content.replace('YOUR_SUPABASE_URL_FROM_ENV', supabase_url)
-        content = content.replace('YOUR_SUPABASE_ANON_KEY_FROM_ENV', supabase_anon_key)
+
+        # Replace placeholder tokens in the config file with actual values
+        # from the environment.
+        content = content.replace('{{SUPABASE_URL}}', supabase_url)
+        content = content.replace('{{SUPABASE_ANON_KEY}}', supabase_anon_key)
         
         with open(config_js_path, 'w') as f:
             f.write(content)
