@@ -308,163 +308,73 @@ class CcsScraper:
             # Check all the checkboxes in the dialog as shown in user's screenshot
             logger.info("Selecting all print options")
             
-            # Select print options based on exact user's screenshot
-            # Take screenshot before option selection
-            self.driver.save_screenshot("before_option_selection.png")
-            
-            # First, find all options to understand their layout
+            # Select print options based on user's screenshot
             try:
-                # Get all checkboxes and radio buttons for reference
-                all_options = self.driver.find_elements(By.XPATH, "//input[@type='checkbox'] | //input[@type='radio']")
-                logger.info(f"Found {len(all_options)} total checkbox/radio button options")
-                
-                for i, option in enumerate(all_options):
-                    try:
-                        option_id = option.get_attribute("id")
-                        option_type = option.get_attribute("type")
-                        option_checked = option.is_selected()
-                        logger.info(f"Option {i}: id={option_id}, type={option_type}, checked={option_checked}")
-                    except:
-                        pass
-            except Exception as e:
-                logger.warning(f"Couldn't enumerate all options: {e}")
-            
-            # 1. Select "Letter Size" radio button (seen in screenshot)
-            try:
-                # Try different strategies to find the Letter Size radio button
+                # 1. Select "Letter Size" radio button (typically default, but ensure it's selected)
                 try:
-                    # First try by label text which is visible in screenshot
                     letter_size = WebDriverWait(self.driver, 5).until(
-                        EC.presence_of_element_located((By.XPATH, "//input[@type='radio'][following-sibling::text()[contains(., 'Letter Size')] or preceding-sibling::text()[contains(., 'Letter Size')] or ancestor::label[contains(text(), 'Letter Size')]]")), 
-                        "Could not find Letter Size radio by label"
+                        EC.presence_of_element_located((By.XPATH, "//input[@type='radio'][following-sibling::*[contains(text(), 'Letter Size')]] | //input[@type='radio'][@id='letterSize']"))
                     )
-                except:
-                    try:
-                        # Try by being the first radio button in Paper Size section
-                        letter_size = WebDriverWait(self.driver, 5).until(
-                            EC.presence_of_element_located((By.XPATH, "(//div[contains(text(), 'Paper Size') or contains(@class, 'paper-size')]//input[@type='radio'])[1]")), 
-                            "Could not find Letter Size as first radio in Paper Size section"
-                        )
-                    except:
-                        # Last resort, use JavaScript to find by visible text near radio button
-                        letter_size = self.driver.execute_script(
-                            "return document.evaluate('//label[contains(text(), \'Letter Size\')]//input[@type=\'radio\'] | //input[@type=\'radio\'][../text()[contains(., \'Letter Size\')]]', document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;")
-                
-                if letter_size:
                     if not letter_size.is_selected():
                         letter_size.click()
                         logger.info("Selected 'Letter Size' option")
-                        time.sleep(0.5)  # Brief pause between selections
-                    else:
-                        logger.info("Letter Size already selected")
-                else:
-                    logger.warning("Letter Size radio button was found but is null")
-                    
-                # Take a screenshot to verify selection
-                self.driver.save_screenshot("after_letter_size_selection.png")
-            except Exception as e:
-                logger.warning(f"Could not select Letter Size radio: {e}")
-                self.driver.save_screenshot("letter_size_selection_error.png")
-            
-            # Use JavaScript to check boxes more reliably
-            checkbox_selectors = [
-                # 2. Pairings checkbox
-                {"name": "Pairings", "xpath": "//input[@type='checkbox'][following-sibling::text()[contains(., 'Pairings')] or preceding-sibling::text()[contains(., 'Pairings')] or ancestor::label[contains(text(), 'Pairings')]]"}, 
-                
-                # 3. Basic Information checkbox
-                {"name": "Basic Information", "xpath": "//input[@type='checkbox'][following-sibling::text()[contains(., 'Basic Information')] or preceding-sibling::text()[contains(., 'Basic')] or ancestor::label[contains(text(), 'Basic')]]"}, 
-                
-                # 4. Layover Information checkbox
-                {"name": "Layover Information", "xpath": "//input[@type='checkbox'][following-sibling::text()[contains(., 'Layover')] or preceding-sibling::text()[contains(., 'Layover')] or ancestor::label[contains(text(), 'Layover')]]"}, 
-                
-                # 5. Crew Information checkbox
-                {"name": "Crew Information", "xpath": "//input[@type='checkbox'][following-sibling::text()[contains(., 'Crew Information')] or preceding-sibling::text()[contains(., 'Crew Information')] or ancestor::label[contains(text(), 'Crew')]]"}
-            ]
-            
-            # Process each checkbox
-            for selector in checkbox_selectors:
-                try:
-                    option_name = selector["name"]
-                    option_xpath = selector["xpath"]
-                    
-                    # Try using standard Selenium method first
-                    try:
-                        checkbox = WebDriverWait(self.driver, 5).until(
-                            EC.presence_of_element_located((By.XPATH, option_xpath))
-                        )
-                        
-                        if not checkbox.is_selected():
-                            checkbox.click()
-                            logger.info(f"Checked '{option_name}' checkbox")
-                            time.sleep(0.5)  # Brief pause between selections
-                        else:
-                            logger.info(f"'{option_name}' checkbox already checked")
-                    except:
-                        # Fallback to JavaScript execution
-                        logger.warning(f"Using JavaScript fallback for {option_name}")
-                        js_script = f"var el = document.evaluate('{option_xpath}', document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue; if(el && !el.checked) {{ el.checked = true; return true; }} else {{ return false; }}"
-                        result = self.driver.execute_script(js_script)
-                        if result:
-                            logger.info(f"JS: Checked '{option_name}' checkbox")
-                        else:
-                            logger.info(f"JS: '{option_name}' checkbox already checked or not found")
-                    
-                    # Take screenshot after each checkbox
-                    self.driver.save_screenshot(f"after_{option_name.lower().replace(' ', '_')}_selection.png")
                 except Exception as e:
-                    logger.warning(f"Could not check {option_name} checkbox: {e}")
-                    self.driver.save_screenshot(f"{option_name.lower().replace(' ', '_')}_selection_error.png")
-            
-            # 6. Select "Yes" radio button for "Include Crew Pictures"
-            try:
-                # Check if there's a Yes radio button near "Include Crew Pictures" text
+                    logger.warning(f"Could not select Letter Size radio: {e}")
+                
+                # 2. Check the "Pairings" checkbox
+                try:
+                    pairings_checkbox = WebDriverWait(self.driver, 5).until(
+                        EC.presence_of_element_located((By.XPATH, "//input[@type='checkbox'][following-sibling::*[contains(text(), 'Pairing')]] | //input[@type='checkbox'][@id='pairings']"))
+                    )
+                    if not pairings_checkbox.is_selected():
+                        pairings_checkbox.click()
+                        logger.info("Checked 'Pairings' checkbox")
+                except Exception as e:
+                    logger.warning(f"Could not check Pairings checkbox: {e}")
+                
+                # 3. Check the "Basic Information" checkbox
+                try:
+                    basic_info_checkbox = WebDriverWait(self.driver, 5).until(
+                        EC.presence_of_element_located((By.XPATH, "//input[@type='checkbox'][following-sibling::*[contains(text(), 'Basic')]] | //input[@type='checkbox'][@id='basicInfo']"))
+                    )
+                    if not basic_info_checkbox.is_selected():
+                        basic_info_checkbox.click()
+                        logger.info("Checked 'Basic Information' checkbox")
+                except Exception as e:
+                    logger.warning(f"Could not check Basic Information checkbox: {e}")
+                
+                # 4. Check the "Layover Information" checkbox
+                try:
+                    layover_info_checkbox = WebDriverWait(self.driver, 5).until(
+                        EC.presence_of_element_located((By.XPATH, "//input[@type='checkbox'][following-sibling::*[contains(text(), 'Layover')]] | //input[@type='checkbox'][@id='layoverInfo']"))
+                    )
+                    if not layover_info_checkbox.is_selected():
+                        layover_info_checkbox.click()
+                        logger.info("Checked 'Layover Information' checkbox")
+                except Exception as e:
+                    logger.warning(f"Could not check Layover Information checkbox: {e}")
+                
+                # 5. Check the "Crew Information" checkbox
+                try:
+                    crew_info_checkbox = WebDriverWait(self.driver, 5).until(
+                        EC.presence_of_element_located((By.XPATH, "//input[@type='checkbox'][following-sibling::*[contains(text(), 'Crew Information')]] | //input[@type='checkbox'][@id='crewInfo']"))
+                    )
+                    if not crew_info_checkbox.is_selected():
+                        crew_info_checkbox.click()
+                        logger.info("Checked 'Crew Information' checkbox")
+                except Exception as e:
+                    logger.warning(f"Could not check Crew Information checkbox: {e}")
+                
+                # 6. Select "Yes" radio button for "Include Crew Pictures"
                 try:
                     crew_pics_yes = WebDriverWait(self.driver, 5).until(
-                        EC.presence_of_element_located((By.XPATH, "//input[@type='radio'][@value='Yes' or @id='crewPicturesYes'][following-sibling::text()[contains(., 'Yes')] or preceding-sibling::text()[contains(., 'Yes')] or ancestor::label[contains(text(), 'Yes')]]")),
-                        "Could not find Yes radio by direct attributes"
+                        EC.presence_of_element_located((By.XPATH, "//input[@type='radio'][@value='Yes'] | //input[@type='radio'][following-sibling::*[contains(text(), 'Yes')]]"))
                     )
-                except:
-                    # Look for radio button with Yes label after "Include Crew Pictures" text
-                    try:
-                        crew_pics_yes = WebDriverWait(self.driver, 5).until(
-                            EC.presence_of_element_located((By.XPATH, "//text()[contains(., 'Include Crew Pictures')]/following::input[@type='radio'][following-sibling::text()[contains(., 'Yes')]]")),
-                            "Could not find Yes radio after Include Crew Pictures text"
-                        )
-                    except:
-                        # Last resort: try JavaScript to find it by nearby text
-                        logger.warning("Using JavaScript to find Yes radio button")
-                        crew_pics_yes = self.driver.execute_script(
-                            "var yesRadios = document.querySelectorAll('input[type=\'radio\']'); " +
-                            "for(var i=0; i<yesRadios.length; i++) { " +
-                            "  var el = yesRadios[i]; " +
-                            "  var text = el.parentElement.textContent || ''; " +
-                            "  if(text.includes('Yes') && text.includes('Include Crew Pictures')) { " +
-                            "    return el; " +
-                            "  } " +
-                            "} " +
-                            "return null;"
-                        )
-                
-                if crew_pics_yes:
                     if not crew_pics_yes.is_selected():
-                        # Try direct click
-                        try:
-                            crew_pics_yes.click()
-                            logger.info("Selected 'Yes' for Include Crew Pictures")
-                        except:
-                            # Try JavaScript click as fallback
-                            self.driver.execute_script("arguments[0].click();", crew_pics_yes)
-                            logger.info("Selected 'Yes' for Include Crew Pictures using JS")
-                    else:
-                        logger.info("'Yes' for Include Crew Pictures already selected")
-                else:
-                    logger.warning("'Yes' radio button not found or is null")
-                    
-                # Take screenshot after crew pictures selection
-                self.driver.save_screenshot("after_crew_pictures_selection.png")
-            except Exception as e:
-                logger.warning(f"Could not select Yes for Crew Pictures: {e}")
-                self.driver.save_screenshot("crew_pictures_selection_error.png")
+                        crew_pics_yes.click()
+                        logger.info("Selected 'Yes' for Include Crew Pictures")
+                except Exception as e:
+                    logger.warning(f"Could not select Yes for Crew Pictures: {e}")
                 
                 # Take screenshot after selecting options
                 self.driver.save_screenshot("print_options_selected.png")
@@ -517,45 +427,19 @@ class CcsScraper:
             logger.info("Waiting for print preview to load")
             self.driver.save_screenshot("after_print_button_click.png")
             
-            # Wait longer for potential dialog or popup to appear
-            time.sleep(5)
-            
             # Check if new window/tab opened
-            try:
-                original_window = self.driver.current_window_handle
-                all_windows = self.driver.window_handles
-                
-                # If new window opened, switch to it
-                if len(all_windows) > 1:
-                    logger.info(f"Detected {len(all_windows)} windows/tabs, switching to print preview")
-                    for window in all_windows:
-                        if window != original_window:
-                            self.driver.switch_to.window(window)
-                            logger.info(f"Switched to new window/tab: {self.driver.current_url}")
-                            
-                            # Take screenshot of new window
-                            self.driver.save_screenshot("print_preview_new_window.png")
-                            break
-                else:
-                    # No new window, check if we're still on the same page
-                    logger.info("No new window detected, checking for changes in current page")
-                    self.driver.save_screenshot("still_on_same_page.png")
-                    
-                    # Check if we need to handle a browser print dialog that might be blocking
-                    logger.info("Sending Escape key to dismiss any browser print dialogs")
-                    from selenium.webdriver.common.keys import Keys
-                    from selenium.webdriver.common.action_chains import ActionChains
-                    
-                    # Try to send Escape key to dismiss any native print dialog
-                    try:
-                        ActionChains(self.driver).send_keys(Keys.ESCAPE).perform()
-                        time.sleep(2)
-                        self.driver.save_screenshot("after_escape_key.png")
-                    except Exception as e:
-                        logger.warning(f"Failed to send Escape key: {e}")
-            except Exception as e:
-                logger.warning(f"Error handling windows: {e}")
-                self.driver.save_screenshot("window_handling_error.png")
+            time.sleep(3)  # Wait for new window/tab if it opens
+            original_window = self.driver.current_window_handle
+            all_windows = self.driver.window_handles
+            
+            # If new window opened, switch to it
+            if len(all_windows) > 1:
+                logger.info(f"Detected {len(all_windows)} windows/tabs, switching to print preview")
+                for window in all_windows:
+                    if window != original_window:
+                        self.driver.switch_to.window(window)
+                        logger.info(f"Switched to new window/tab: {self.driver.current_url}")
+                        break
             
             # Wait for print preview content to fully load
             logger.info("Waiting for print preview content to load")
