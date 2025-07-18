@@ -136,8 +136,16 @@ def get_pairings():
     if not supabase:
         return jsonify({"error": "Database connection not configured"}), 500
 
+    auth_header = request.headers.get('Authorization')
+    if not auth_header:
+        return jsonify({"error": "Authorization header missing"}), 401
+
+    parts = auth_header.split()
+    if len(parts) != 2 or parts[0].lower() != 'bearer' or not parts[1].strip():
+        return jsonify({"error": "Malformed authorization header"}), 400
+
     # In a real app, user_id would come from the validated JWT
-    user_id = request.headers.get('Authorization').split(' ')[1] # Placeholder
+    user_id = parts[1]
 
     try:
         res = supabase.table('pairings').select('*').eq('user_id', user_id).order('start_date', desc=True).execute()
