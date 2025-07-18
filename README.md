@@ -35,8 +35,14 @@ For detailed instructions on how to deploy and run this application, please see 
     ```
 
 2.  **Install dependencies:**
+    Create a virtual environment (recommended) and install the Python and Node
+    dependencies:
     ```bash
+    python -m venv venv
+    source venv/bin/activate
     pip install -r requirements.txt
+    # Install additional packages needed only for running tests
+    pip install -r requirements-dev.txt
     npm install
     ```
 
